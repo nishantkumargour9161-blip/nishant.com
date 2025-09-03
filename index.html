@@ -1,0 +1,416 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flappy Bird — Lite</title>
+  <meta name="description" content="A lightweight Flappy Bird-style game with About, Contact, Privacy Policy, and Features sections. Intended for ages 13+." />
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --panel:#111827; /* gray-900 */
+      --ink:#e5e7eb; /* gray-200 */
+      --muted:#94a3b8; /* slate-400 */
+      --accent:#22c55e; /* green-500 */
+      --accent-2:#38bdf8; /* sky-400 */
+      --danger:#ef4444; /* red-500 */
+      --gold:#f59e0b; /* amber-500 */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b1023 0%,#0f172a 100%);color:var(--ink);font:16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji"}
+    a{color:var(--accent-2);text-decoration:none}
+    a:hover{text-decoration:underline}
+    header{
+      position:sticky;top:0;z-index:10;background:rgba(17,24,39,.8);backdrop-filter:blur(8px);
+      border-bottom:1px solid rgba(255,255,255,.06)
+    }
+    .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+    .nav{display:flex;align-items:center;gap:10px;padding:12px 0}
+    .brand{font-weight:800;letter-spacing:.3px}
+    .spacer{flex:1}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.12);padding:8px 12px;border-radius:12px;background:#0b132b;cursor:pointer}
+    .btn:hover{border-color:rgba(255,255,255,.3)}
+    .grid{display:grid;gap:18px}
+    .hero{padding:18px 0 8px}
+    .panel{background:rgba(17,24,39,.7);border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .panel.pad{padding:16px}
+    .footer{color:var(--muted);font-size:.9rem;border-top:1px solid rgba(255,255,255,.06);margin-top:28px}/* Game area */
+#gamePanel{display:grid;grid-template-columns:1fr;gap:12px}
+.hud{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hud .stat{padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09)}
+.hud label{font-size:.9rem;color:var(--muted)}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.primary{background:var(--accent);border-color:transparent;color:#071b0f}
+.danger{background:var(--danger);border-color:transparent;color:#220909}
+.gold{background:var(--gold);border-color:transparent;color:#1f1403}
+.canvas-wrap{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+canvas{display:block;width:100%;height:auto;background:#000}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.6));opacity:0;pointer-events:none;transition:.25s}
+.overlay.show{opacity:1;pointer-events:auto}
+.overlay .box{background:rgba(17,24,39,.85);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,.12);text-align:center}
+.kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;display:inline-block;padding:2px 6px;border:1px solid rgba(255,255,255,.18);border-radius:6px;background:rgba(255,255,255,.06);margin-inline:2px}
+
+/* Tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab-btn{padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);cursor:pointer}
+.tab-btn[aria-selected="true"]{background:rgba(255,255,255,.12)}
+.tab{display:none}
+.tab.active{display:block}
+
+@media(min-width:900px){
+  #layout{grid-template-columns: 2fr 1fr}
+  .grid.hero{grid-template-columns:1.4fr 1fr}
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div class="brand">🐦 Flappy Lite</div>
+      <div class="spacer"></div>
+      <button class="btn" id="btnAbout">About</button>
+      <button class="btn" id="btnFeatures">Features</button>
+      <button class="btn" id="btnPrivacy">Privacy</button>
+      <button class="btn" id="btnContact">Contact</button>
+    </div>
+  </header>  <main class="wrap">
+    <section class="grid hero">
+      <div class="panel pad">
+        <h1 style="margin:8px 0 4px">Flappy Bird — Browser Game</h1>
+        <p style="margin:0;color:var(--muted)">Tap/Click or press <span class="kbd">Space</span> / <span class="kbd">↑</span> to flap. Avoid pipes, set a high score, and have fun! Intended for ages <strong>13+</strong>.</p>
+      </div>
+      <div class="panel pad">
+        <div class="tabs" role="tablist" aria-label="Info tabs">
+          <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-about" id="tabAboutBtn">About</button>
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-features" id="tabFeatBtn">Features</button>
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-privacy" id="tabPrivBtn">Privacy</button>
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-contact" id="tabContactBtn">Contact</button>
+        </div>
+        <div class="tab active" id="tab-about" role="tabpanel" aria-labelledby="tabAboutBtn">
+          <p>This is a simple, ad‑free Flappy Bird‑style game built in vanilla HTML5 Canvas and JavaScript. It stores only your top score in your browser using LocalStorage.</p>
+        </div>
+        <div class="tab" id="tab-features" role="tabpanel" aria-labelledby="tabFeatBtn">
+          <ul>
+            <li>🎮 Smooth controls: click/tap or Space/ArrowUp to flap.</li>
+            <li>📱 Responsive canvas; works on mobile & desktop.</li>
+            <li>⚙️ Difficulty: Easy / Normal / Hard.</li>
+            <li>🏅 High score saved locally (no servers).</li>
+            <li>🌄 Scrolling custom background.</li>
+            <li>🕊️ Custom bird sprite from your URL.</li>
+            <li>⏸️ Pause/Resume & Quick Restart.</li>
+          </ul>
+        </div>
+        <div class="tab" id="tab-privacy" role="tabpanel" aria-labelledby="tabPrivBtn">
+          <h3>Privacy Policy (Ages 13+)</h3>
+          <p><strong>Last updated:</strong> 01 Sep 2025</p>
+          <p>This game is designed for users aged <strong>13 and above</strong>. We do not knowingly collect personal information from children under 13. If you are under 13, please do not use this site.</p>
+          <p><strong>Data we store:</strong> your high score only, saved locally in your browser using <em>LocalStorage</em>. No data is sent to a server by this page.</p>
+          <p><strong>Cookies:</strong> none.</p>
+          <p><strong>Contact:</strong> If you have questions or requests (including removal of data), email us at <a href="mailto:your-email@example.com">your-email@example.com</a>.</p>
+        </div>
+        <div class="tab" id="tab-contact" role="tabpanel" aria-labelledby="tabContactBtn">
+          <p>We’d love to hear from you! For support, ideas, or collaboration:</p>
+          <ul>
+            <li>Email: <a href="mailto:your-email@example.com">your-email@example.com</a></li>
+            <li>Phone/WhatsApp (optional): +91-00000-00000</li>
+          </ul>
+          <p style="color:var(--muted)">Tip: Change the contact details in the HTML file to your own.</p>
+        </div>
+      </div>
+    </section><section id="layout" class="grid">
+  <div id="gamePanel">
+    <div class="panel pad">
+      <div class="hud">
+        <div class="stat">Score: <span id="score">0</span></div>
+        <div class="stat">Best: <span id="best">0</span></div>
+        <div class="stat"><label for="difficulty">Difficulty:</label>
+          <select id="difficulty" class="btn" title="Choose difficulty">
+            <option value="easy">Easy</option>
+            <option value="normal" selected>Normal</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div class="controls" style="margin-left:auto">
+          <button class="btn primary" id="playBtn">▶ Play</button>
+          <button class="btn" id="pauseBtn">⏸ Pause</button>
+          <button class="btn danger" id="restartBtn">↻ Restart</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel canvas-wrap">
+      <canvas id="game" width="480" height="640" aria-label="Flappy game canvas"></canvas>
+      <div class="overlay show" id="overlay">
+        <div class="box">
+          <h2 style="margin:0 0 8px">Tap/Press to Start</h2>
+          <p style="margin:0 0 8px">Press <span class="kbd">Space</span> or <span class="kbd">↑</span>, or tap/click to flap.</p>
+          <p style="margin:0">Use the controls above to pause or restart.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="panel pad">
+    <h3 style="margin-top:0">How to Play</h3>
+    <ol>
+      <li>Press <span class="kbd">Space</span> / <span class="kbd">↑</span> or tap the screen to flap.</li>
+      <li>Fly through the gaps between pipes to score.</li>
+      <li>Don’t hit the pipes or the ground!</li>
+    </ol>
+    <h4>Tips</h4>
+    <ul>
+      <li>Short, rhythmic taps work best.</li>
+      <li>Try Easy mode first if you’re new.</li>
+      <li>Chasing a new high score? Stay calm 🙂</li>
+    </ul>
+    <h4>Attribution</h4>
+    <p>Bird image and background are loaded from the URLs you provided.</p>
+  </aside>
+</section>
+
+<section class="footer pad panel">
+  <p>© 2025 Flappy Lite. All rights reserved. | <a href="#tab-privacy" id="footerPrivacy">Privacy</a> | <a href="#tab-contact" id="footerContact">Contact</a></p>
+</section>
+
+  </main>  <script>
+    // ====== Tabs logic ======
+    const tabs = [
+      {btn: document.getElementById('tabAboutBtn'), pane: document.getElementById('tab-about')},
+      {btn: document.getElementById('tabFeatBtn'), pane: document.getElementById('tab-features')},
+      {btn: document.getElementById('tabPrivBtn'), pane: document.getElementById('tab-privacy')},
+      {btn: document.getElementById('tabContactBtn'), pane: document.getElementById('tab-contact')},
+    ];
+    function setTab(index){
+      tabs.forEach((t,i)=>{
+        t.btn.setAttribute('aria-selected', i===index ? 'true' : 'false');
+        t.pane.classList.toggle('active', i===index);
+      });
+    }
+    tabs.forEach((t, i)=> t.btn.addEventListener('click', ()=> setTab(i)));
+    document.getElementById('btnAbout').onclick=()=>setTab(0);
+    document.getElementById('btnFeatures').onclick=()=>setTab(1);
+    document.getElementById('btnPrivacy').onclick=()=>setTab(2);
+    document.getElementById('btnContact').onclick=()=>setTab(3);
+    document.getElementById('footerPrivacy').onclick=(e)=>{e.preventDefault();setTab(2)};
+    document.getElementById('footerContact').onclick=(e)=>{e.preventDefault();setTab(3)};
+
+    // ====== Game constants & state ======
+    const cvs = document.getElementById('game');
+    const ctx = cvs.getContext('2d');
+
+    const BIRD_IMG_URL = 'https://i.postimg.cc/PfF5sJmc/favpng-9ef4570ee1aaa8a0b4f055094c5beb75.png';
+    const BG_IMG_URL   = 'https://i.postimg.cc/0NmVxzMC/IMG-20250824-220854.jpg';
+
+    const overlay = document.getElementById('overlay');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const diffSel = document.getElementById('difficulty');
+
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1)); // cap for perf
+    let running = false, paused = false, started = false;
+
+    let birdImg = new Image(); birdImg.src = BIRD_IMG_URL; birdImg.decoding='async';
+    let bgImg = new Image(); bgImg.src = BG_IMG_URL; bgImg.decoding='async';
+
+    // Difficulty parameters
+    const DIFF = {
+      easy:   {gap: 170, pipe: 2.5, gravity: 0.35, flap: 6.2, spawn: 120},
+      normal: {gap: 150, pipe: 3.0, gravity: 0.38, flap: 6.5, spawn: 105},
+      hard:   {gap: 135, pipe: 3.5, gravity: 0.42, flap: 6.9, spawn: 95},
+    };
+
+    let W = 480, H = 640;
+    function resize(){
+      const maxW = Math.min(700, document.querySelector('.canvas-wrap').clientWidth);
+      const scale = maxW / W;
+      cvs.style.width = maxW + 'px';
+      cvs.style.height = (H*scale) + 'px';
+      cvs.width = Math.floor(W * DPR);
+      cvs.height = Math.floor(H * DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    window.addEventListener('resize', resize, {passive:true});
+    resize();
+
+    // Game entities
+    let bird, pipes, frame, score, best, bgx;
+
+    function reset(){
+      const d = DIFF[diffSel.value];
+      bird = {x: 120, y: H/2, vy: 0, r: 18, flap: d.flap, gravity: d.gravity};
+      pipes = [];
+      frame = 0; score = 0; bgx = 0; started=false; paused=false; running=false;
+      overlay.classList.add('show');
+      updateScore();
+    }
+
+    function updateScore(){
+      scoreEl.textContent = score;
+      best = Math.max(Number(localStorage.getItem('flappy_best')||0), score);
+      localStorage.setItem('flappy_best', String(best));
+      bestEl.textContent = best;
+    }
+
+    // Pipe factory
+    function spawnPipe(){
+      const d = DIFF[diffSel.value];
+      const topMin = 40, bottomMin = 80;
+      const gap = d.gap;
+      const top = Math.floor(topMin + Math.random()*(H - topMin - bottomMin - gap));
+      pipes.push({x: W+40, top: top, bottom: top + gap, w: 60, passed:false});
+    }
+
+    function collides(b, p){
+      // collision with pipe (axis-aligned boxes around bird)
+      const bx1 = b.x - b.r, bx2 = b.x + b.r;
+      const by1 = b.y - b.r, by2 = b.y + b.r;
+      const px1 = p.x, px2 = p.x + p.w;
+      const hitX = bx2 > px1 && bx1 < px2;
+      const hitTop = by1 < p.top;
+      const hitBottom = by2 > p.bottom;
+      return hitX && (hitTop || hitBottom);
+    }
+
+    function gameOver(){
+      running=false; started=true; paused=false;
+      overlay.classList.add('show');
+      overlay.querySelector('.box').innerHTML = `
+        <h2 style="margin:0 0 8px">Game Over</h2>
+        <p style="margin:0 0 6px">Score: <strong>${score}</strong> — Best: <strong>${Math.max(best, score)}</strong></p>
+        <p style="margin:0">Press <span class="kbd">Space</span> / tap or click to restart</p>`;
+      updateScore();
+    }
+
+    function step(){
+      if(!running){ return; }
+      const d = DIFF[diffSel.value];
+      frame++;
+
+      // Scroll background
+      bgx -= d.pipe * 0.6; if(bgx <= -W) bgx += W;
+
+      // physics
+      bird.vy += bird.gravity;
+      bird.y += bird.vy;
+
+      // spawn pipes
+      if(frame % d.spawn === 0){ spawnPipe(); }
+
+      // move pipes & score
+      for(let i=0;i<pipes.length;i++){
+        const p = pipes[i];
+        p.x -= d.pipe;
+        if(!p.passed && p.x + p.w < bird.x - bird.r){
+          p.passed = true; score++; updateScore();
+        }
+      }
+      // remove offscreen
+      pipes = pipes.filter(p=> p.x + p.w > -10);
+
+      // collisions with world
+      if(bird.y + bird.r >= H-10 || bird.y - bird.r <= 0){
+        return gameOver();
+      }
+      for(const p of pipes){
+        if(collides(bird,p)) return gameOver();
+      }
+
+      // draw
+      draw();
+      requestAnimationFrame(step);
+    }
+
+    function draw(){
+      // background (tiled horizontal)
+      if(bgImg.complete && bgImg.naturalWidth>0){
+        const patternW = W;
+        ctx.drawImage(bgImg, bgx, 0, patternW, H);
+        ctx.drawImage(bgImg, bgx + patternW, 0, patternW, H);
+      } else {
+        ctx.fillStyle = '#0b1023';
+        ctx.fillRect(0,0,W,H);
+      }
+
+      // ground line
+      ctx.fillStyle = 'rgba(255,255,255,.06)';
+      ctx.fillRect(0, H-10, W, 10);
+
+      // pipes
+      for(const p of pipes){
+        // pipe body
+        ctx.fillStyle = 'rgba(56,189,248,.9)';
+        ctx.fillRect(p.x, 0, p.w, p.top);
+        ctx.fillRect(p.x, p.bottom, p.w, H - p.bottom - 10);
+        // caps
+        ctx.fillStyle = 'rgba(255,255,255,.18)';
+        ctx.fillRect(p.x-2, p.top-14, p.w+4, 14);
+        ctx.fillRect(p.x-2, p.bottom, p.w+4, 14);
+      }
+
+      // bird
+      if(birdImg.complete && birdImg.naturalWidth>0){
+        const bw = 48, bh = 36; // draw size
+        const angle = Math.max(-0.6, Math.min(0.7, bird.vy*0.06));
+        ctx.save();
+        ctx.translate(bird.x, bird.y);
+        ctx.rotate(angle);
+        ctx.drawImage(birdImg, -bw/2, -bh/2, bw, bh);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#22c55e';
+        ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI*2); ctx.fill();
+      }
+
+      // score HUD
+      ctx.font = 'bold 28px ui-sans-serif, system-ui';
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.fillText(String(score), 21, 49);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(String(score), 20, 48);
+    }
+
+    function flap(){
+      bird.vy = -bird.flap;
+    }
+
+    // ====== Input handling ======
+    function startIfNeeded(){
+      if(!running){
+        running = true; overlay.classList.remove('show');
+        requestAnimationFrame(step);
+      }
+    }
+
+    function handlePrimaryAction(){
+      if(!started){ started=true; startIfNeeded(); flap(); return; }
+      if(!running){ reset(); startIfNeeded(); return; }
+      if(!paused){ flap(); }
+    }
+
+    window.addEventListener('keydown', (e)=>{
+      if(e.code==='Space' || e.code==='ArrowUp'){ e.preventDefault(); handlePrimaryAction(); }
+      if(e.code==='KeyP'){ togglePause(); }
+      if(e.code==='KeyR'){ hardRestart(); }
+    });
+    window.addEventListener('pointerdown', ()=> handlePrimaryAction());
+
+    function togglePause(){
+      if(!running) return; paused = !paused;
+      if(paused){ running=false; overlay.classList.add('show'); overlay.querySelector('.box').innerHTML = '<h2>Paused</h2><p>Press Space/tap to resume</p>'; }
+      else { running=true; overlay.classList.remove('show'); requestAnimationFrame(step); }
+    }
+
+    function hardRestart(){ reset(); running=true; overlay.classList.remove('show'); requestAnimationFrame(step); }
+
+    pauseBtn.addEventListener('click', togglePause);
+    restartBtn.addEventListener('click', hardRestart);
+    playBtn.addEventListener('click', ()=> { if(!running){ reset(); running=true; overlay.classList.remove('show'); requestAnimationFrame(step);} });
+    diffSel.addEventListener('change', ()=> reset());
+
+    // boot
+    reset();
+  </script></body>
+</html>
